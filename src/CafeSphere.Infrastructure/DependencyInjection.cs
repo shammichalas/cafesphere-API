@@ -1,4 +1,5 @@
 using System.Text;
+using CafeSphere.Application.Interfaces;
 using CafeSphere.Infrastructure.Authentication;
 using CafeSphere.Infrastructure.Caching;
 using CafeSphere.Infrastructure.Email;
