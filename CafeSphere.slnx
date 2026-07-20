@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CafeSphere.API/CafeSphere.API.csproj" />
+    <Project Path="src/CafeSphere.Application/CafeSphere.Application.csproj" />
+    <Project Path="src/CafeSphere.Domain/CafeSphere.Domain.csproj" />
+    <Project Path="src/CafeSphere.Infrastructure/CafeSphere.Infrastructure.csproj" />
+    <Project Path="src/CafeSphere.Persistence/CafeSphere.Persistence.csproj" />
+    <Project Path="src/CafeSphere.Shared/CafeSphere.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CafeSphere.Tests/CafeSphere.Tests.csproj" />
+  </Folder>
+</Solution>
