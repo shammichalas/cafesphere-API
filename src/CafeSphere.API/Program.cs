@@ -53,7 +53,7 @@ builder.Services.AddSignalR();
 // Configure CORS reading directly from .env configuration
 var corsAllowedOrigins = builder.Configuration["CORS_ALLOWED_ORIGINS"]?
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) 
-    ?? Array.Empty<string>();
+    ?? new[] { "http://localhost:5247", "https://cafespheree.netlify.app" };
 
 builder.Services.AddCors(options =>
 {
