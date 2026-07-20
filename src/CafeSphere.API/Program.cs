@@ -121,11 +121,19 @@ using (var scope = app.Services.CreateScope())
     }
     catch (MongoDB.Driver.MongoAuthenticationException authEx)
     {
-        Log.Warning("MongoDB Atlas Authentication Failed: {Message}. Please verify your database username & password in backend/.env", authEx.Message);
+        Log.Warning("MongoDB Atlas Authentication Failed: {Message}. Please verify your database credentials in backend/.env", authEx.Message);
+    }
+    catch (TimeoutException timeEx)
+    {
+        Log.Warning("MongoDB database is not reachable ({Message}). API will continue running without local MongoDB.", timeEx.Message);
+    }
+    catch (MongoDB.Driver.MongoConnectionException connEx)
+    {
+        Log.Warning("MongoDB database connection refused ({Message}). API will continue running without local MongoDB.", connEx.Message);
     }
     catch (Exception ex)
     {
-        Log.Error(ex, "An error occurred while initializing MongoDB database.");
+        Log.Warning("Skipping MongoDB startup initialization: {Message}", ex.Message);
     }
 }
 

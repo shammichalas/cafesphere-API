@@ -27,8 +27,18 @@ public class MongoDbContext : IMongoDbContext
     public MongoDbContext(IOptions<MongoDbSettings> settingsOptions)
     {
         var settings = settingsOptions.Value;
-        _client = new MongoClient(settings.ConnectionString);
-        Database = _client.GetDatabase(settings.DatabaseName);
+        var connectionString = string.IsNullOrWhiteSpace(settings.ConnectionString)
+            ? "mongodb://localhost:27017"
+            : settings.ConnectionString;
+
+        var mongoClientSettings = MongoClientSettings.FromConnectionString(connectionString);
+        var timeoutSeconds = settings.ServerSelectionTimeoutSeconds > 0
+            ? settings.ServerSelectionTimeoutSeconds
+            : 3;
+        mongoClientSettings.ServerSelectionTimeout = TimeSpan.FromSeconds(timeoutSeconds);
+
+        _client = new MongoClient(mongoClientSettings);
+        Database = _client.GetDatabase(string.IsNullOrWhiteSpace(settings.DatabaseName) ? "CafeSphereDb" : settings.DatabaseName);
     }
 
     public IMongoCollection<User> Users => GetCollection<User>("Users");
