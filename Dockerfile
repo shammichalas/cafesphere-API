@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
 # Copy Solution & project files for layer caching
-COPY CafeSphere.sln ./
+COPY CafeSphere.sln* ./
 COPY src/CafeSphere.Domain/CafeSphere.Domain.csproj src/CafeSphere.Domain/
 COPY src/CafeSphere.Shared/CafeSphere.Shared.csproj src/CafeSphere.Shared/
 COPY src/CafeSphere.Application/CafeSphere.Application.csproj src/CafeSphere.Application/
