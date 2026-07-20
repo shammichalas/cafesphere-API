@@ -1,6 +1,4 @@
-@CafeSphere.API_HostAddress = http://localhost:5075
+@CafeSphere.API_HostAddress = {{HostAddress}}
 
-GET {{CafeSphere.API_HostAddress}}/weatherforecast/
+GET {{CafeSphere.API_HostAddress}}/api/v1/health
 Accept: application/json
-
-###

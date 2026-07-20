@@ -50,7 +50,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSignalR();
 
-// Configure CORS reading directly from .env
+// Configure CORS reading directly from .env configuration
 var corsAllowedOrigins = builder.Configuration["CORS_ALLOWED_ORIGINS"]?
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) 
     ?? Array.Empty<string>();
@@ -59,20 +59,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        if (builder.Environment.IsDevelopment())
-        {
-            policy.SetIsOriginAllowed(_ => true)
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
-        }
-        else
-        {
-            policy.WithOrigins(corsAllowedOrigins)
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
-        }
+        policy.WithOrigins(corsAllowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
