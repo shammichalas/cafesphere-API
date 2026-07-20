@@ -53,19 +53,29 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSignalR();
 
-// Configure CORS reading from .env
+// Configure CORS reading directly from .env
 var corsAllowedOrigins = builder.Configuration["CORS_ALLOWED_ORIGINS"]?
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) 
-    ?? new[] { "http://localhost:5288", "http://localhost:5000" };
+    ?? Array.Empty<string>();
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins(corsAllowedOrigins)
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        if (builder.Environment.IsDevelopment())
+        {
+            policy.SetIsOriginAllowed(_ => true)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
+        else
+        {
+            policy.WithOrigins(corsAllowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
     });
 });
 
@@ -107,11 +117,15 @@ using (var scope = app.Services.CreateScope())
     {
         var mongoContext = scope.ServiceProvider.GetRequiredService<IMongoDbContext>();
         await MongoDbInitializer.InitializeAsync(mongoContext);
-        Log.Information("MongoDB Atlas initialization & index creation completed.");
+        Log.Information("MongoDB initialization & index creation completed successfully.");
+    }
+    catch (MongoDB.Driver.MongoAuthenticationException authEx)
+    {
+        Log.Warning("MongoDB Atlas Authentication Failed: {Message}. Please verify your database username & password in backend/.env", authEx.Message);
     }
     catch (Exception ex)
     {
-        Log.Error(ex, "An error occurred while initializing MongoDB Atlas database.");
+        Log.Error(ex, "An error occurred while initializing MongoDB database.");
     }
 }
 
