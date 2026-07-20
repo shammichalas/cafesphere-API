@@ -1,4 +1,5 @@
 using CafeSphere.Application.DTOs;
+using CafeSphere.Application.Features.Catalog;
 using CafeSphere.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,13 +10,14 @@ namespace CafeSphere.API.Controllers;
 public class CategoriesController : BaseApiController
 {
     /// <summary>
-    /// Retrieve all active catalog categories.
+    /// Retrieve all active catalog categories from MongoDB Atlas.
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(List<CategoryDto>), StatusCodes.Status200OK)]
-    public IActionResult GetCategories()
+    public async Task<IActionResult> GetCategories()
     {
-        return Ok(new List<CategoryDto>());
+        var result = await Mediator.Send(new GetCategoriesQuery());
+        return HandleResult(result);
     }
 }
 
@@ -23,38 +25,14 @@ public class CategoriesController : BaseApiController
 public class ProductsController : BaseApiController
 {
     /// <summary>
-    /// Retrieve list of products with optional category filter.
+    /// Retrieve list of products with optional category filter from MongoDB Atlas.
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(List<ProductDto>), StatusCodes.Status200OK)]
-    public IActionResult GetProducts([FromQuery] string? categoryId = null)
+    public async Task<IActionResult> GetProducts([FromQuery] string? categoryId = null)
     {
-        return Ok(new List<ProductDto>());
-    }
-
-    /// <summary>
-    /// Create new menu product.
-    /// </summary>
-    [Authorize(Roles = $"{Roles.SuperAdmin},{Roles.Admin},{Roles.Manager}")]
-    [HttpPost]
-    [ProducesResponseType(typeof(ProductDto), StatusCodes.Status201Created)]
-    public IActionResult CreateProduct([FromBody] CreateProductRequest request)
-    {
-        var product = new ProductDto(
-            Id: Guid.NewGuid().ToString("N"),
-            Name: request.Name,
-            Slug: request.Name.ToLower().Replace(" ", "-"),
-            Description: request.Description,
-            Price: request.Price,
-            CostPrice: request.CostPrice,
-            CategoryId: request.CategoryId,
-            CategoryName: "Beverages",
-            ImageUrl: request.ImageUrl,
-            PreparationTimeMinutes: request.PreparationTimeMinutes,
-            IsAvailable: true
-        );
-
-        return CreatedAtAction(nameof(GetProducts), new { id = product.Id }, product);
+        var result = await Mediator.Send(new GetProductsQuery(categoryId));
+        return HandleResult(result);
     }
 }
 
@@ -63,12 +41,13 @@ public class ProductsController : BaseApiController
 public class InventoryController : BaseApiController
 {
     /// <summary>
-    /// Get current stock levels of inventory items.
+    /// Get current stock levels of inventory items from MongoDB Atlas.
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(List<InventoryItemDto>), StatusCodes.Status200OK)]
-    public IActionResult GetInventoryItems()
+    public async Task<IActionResult> GetInventoryItems()
     {
-        return Ok(new List<InventoryItemDto>());
+        var result = await Mediator.Send(new GetInventoryItemsQuery());
+        return HandleResult(result);
     }
 }

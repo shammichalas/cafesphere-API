@@ -1,4 +1,6 @@
 using CafeSphere.Application.DTOs;
+using CafeSphere.Application.Features.Dashboard;
+using CafeSphere.Application.Features.Orders;
 using CafeSphere.Domain.Enums;
 using CafeSphere.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
@@ -11,13 +13,14 @@ namespace CafeSphere.API.Controllers;
 public class KitchenController : BaseApiController
 {
     /// <summary>
-    /// Fetch active kitchen queue order items needing preparation.
+    /// Fetch active kitchen queue order tickets needing preparation.
     /// </summary>
     [HttpGet("queue")]
     [ProducesResponseType(typeof(List<OrderDto>), StatusCodes.Status200OK)]
-    public IActionResult GetKitchenQueue()
+    public async Task<IActionResult> GetKitchenQueue()
     {
-        return Ok(new List<OrderDto>());
+        var result = await Mediator.Send(new GetKitchenQueueQuery());
+        return HandleResult(result);
     }
 
     /// <summary>
@@ -25,9 +28,10 @@ public class KitchenController : BaseApiController
     /// </summary>
     [HttpPatch("orders/{orderId}/status")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public IActionResult UpdateKitchenStatus(string orderId, [FromBody] UpdateOrderStatusRequest request)
+    public async Task<IActionResult> UpdateKitchenStatus(string orderId, [FromBody] UpdateOrderStatusRequest request)
     {
-        return Ok(new { OrderId = orderId, Status = request.NewStatus, UpdatedAt = DateTime.UtcNow });
+        var result = await Mediator.Send(new UpdateKitchenOrderStatusCommand(orderId, request.NewStatus));
+        return HandleResult(result);
     }
 }
 
@@ -36,28 +40,13 @@ public class KitchenController : BaseApiController
 public class DashboardController : BaseApiController
 {
     /// <summary>
-    /// Get real-time overview KPIs, sales statistics, and top product metrics.
+    /// Get real-time overview KPIs, sales statistics, and top product metrics from MongoDB Atlas.
     /// </summary>
     [HttpGet("metrics")]
     [ProducesResponseType(typeof(DashboardMetricsDto), StatusCodes.Status200OK)]
-    public IActionResult GetMetrics()
+    public async Task<IActionResult> GetMetrics()
     {
-        var metrics = new DashboardMetricsDto(
-            TodayRevenue: 1450.50m,
-            TodayOrdersCount: 42,
-            MonthRevenue: 38400.00m,
-            TotalExpenses: 12500.00m,
-            NetProfit: 25900.00m,
-            ActiveTablesCount: 8,
-            PendingKitchenOrdersCount: 3,
-            TopProducts: new List<TopProductDto>
-            {
-                new("prod_1", "Espresso Single Origin", 150, 675.00m),
-                new("prod_2", "Iced Vanilla Latte", 120, 780.00m),
-                new("prod_3", "Avocado Toast Sourdough", 85, 935.00m)
-            }
-        );
-
-        return Ok(metrics);
+        var result = await Mediator.Send(new GetDashboardMetricsQuery());
+        return HandleResult(result);
     }
 }

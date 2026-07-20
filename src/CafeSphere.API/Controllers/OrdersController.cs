@@ -54,22 +54,15 @@ public class PosController : BaseApiController
     /// </summary>
     [HttpPost("checkout")]
     [ProducesResponseType(typeof(ReceiptDto), StatusCodes.Status200OK)]
-    public IActionResult Checkout([FromBody] CheckoutRequest request)
+    public async Task<IActionResult> Checkout([FromBody] CheckoutRequest request)
     {
-        var receipt = new ReceiptDto(
-            OrderNumber: $"ORD-POS-{Random.Shared.Next(1000, 9999)}",
-            CustomerName: "Walk-in Guest",
-            OrderDate: DateTime.UtcNow,
-            Items: new List<OrderItemDto>(),
-            SubTotal: request.AmountPaid,
-            TaxAmount: request.AmountPaid * 0.10m,
-            DiscountAmount: 0,
-            TotalAmount: request.AmountPaid * 1.10m,
-            PaymentMethod: request.Method,
-            ReceiptHeader: "CafeSphere Enterprise POS",
-            ReceiptFooter: "Thank you for visiting CafeSphere!"
+        var command = new CheckoutOrderCommand(
+            request.OrderId,
+            request.AmountPaid,
+            request.Method
         );
 
-        return Ok(receipt);
+        var result = await Mediator.Send(command);
+        return HandleResult(result);
     }
 }
