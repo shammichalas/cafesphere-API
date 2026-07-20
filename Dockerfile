@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
 # Copy Solution & project files for layer caching
-COPY CafeSphere.sln* ./
+COPY CafeSphere.sln ./
 COPY src/CafeSphere.Domain/CafeSphere.Domain.csproj src/CafeSphere.Domain/
 COPY src/CafeSphere.Shared/CafeSphere.Shared.csproj src/CafeSphere.Shared/
 COPY src/CafeSphere.Application/CafeSphere.Application.csproj src/CafeSphere.Application/
@@ -12,12 +12,12 @@ COPY src/CafeSphere.Infrastructure/CafeSphere.Infrastructure.csproj src/CafeSphe
 COPY src/CafeSphere.API/CafeSphere.API.csproj src/CafeSphere.API/
 COPY tests/CafeSphere.Tests/CafeSphere.Tests.csproj tests/CafeSphere.Tests/
 
-RUN dotnet restore
+RUN dotnet restore CafeSphere.sln
 
 # Copy all source files and build
 COPY . .
 WORKDIR /app/src/CafeSphere.API
-RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish CafeSphere.API.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 # Runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
