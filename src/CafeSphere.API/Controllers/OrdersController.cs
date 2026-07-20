@@ -5,19 +5,53 @@ using CafeSphere.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using CafeSphere.Application.Interfaces;
+
 namespace CafeSphere.API.Controllers;
 
 [Authorize]
 public class OrdersController : BaseApiController
 {
+    private readonly ICurrentUserService _currentUserService;
+
+    public OrdersController(ICurrentUserService currentUserService)
+    {
+        _currentUserService = currentUserService;
+    }
+
     /// <summary>
-    /// Retrieve paginated list of cafe orders filtered by optional status.
+    /// Retrieve paginated list of cafe orders. Customers are strictly restricted to their own orders server-side.
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(Shared.Models.PagedResult<OrderDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetOrders([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, [FromQuery] OrderStatus? status = null)
+    public async Task<IActionResult> GetOrders(
+        [FromQuery] int pageNumber = 1, 
+        [FromQuery] int pageSize = 20, 
+        [FromQuery] OrderStatus? status = null,
+        [FromQuery] string? customerId = null)
     {
-        var query = new GetOrdersQuery(pageNumber, pageSize, status);
+        // Enforce ownership: If caller is a Customer, force-filter to their own UserId regardless of client input
+        var effectiveCustomerId = _currentUserService.UserRole == Roles.Customer 
+            ? _currentUserService.UserId 
+            : customerId;
+
+        var query = new GetOrdersQuery(pageNumber, pageSize, status, effectiveCustomerId);
+        var result = await Mediator.Send(query);
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    /// Retrieve the current authenticated customer's own order history.
+    /// </summary>
+    [HttpGet("my")]
+    [ProducesResponseType(typeof(Shared.Models.PagedResult<OrderDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMyOrders(
+        [FromQuery] int pageNumber = 1, 
+        [FromQuery] int pageSize = 20, 
+        [FromQuery] OrderStatus? status = null)
+    {
+        var currentUserId = _currentUserService.UserId;
+        var query = new GetOrdersQuery(pageNumber, pageSize, status, currentUserId);
         var result = await Mediator.Send(query);
         return HandleResult(result);
     }

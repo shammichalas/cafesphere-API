@@ -402,7 +402,8 @@ public class UpdateKitchenOrderStatusCommandHandler : IRequestHandler<UpdateKitc
 public record GetOrdersQuery(
     int PageNumber = 1,
     int PageSize = 20,
-    OrderStatus? Status = null
+    OrderStatus? Status = null,
+    string? CustomerId = null
 ) : IRequest<Result<PagedResult<OrderDto>>>;
 
 public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, Result<PagedResult<OrderDto>>>
@@ -419,7 +420,8 @@ public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, Result<Page
         try
         {
             var pagedOrders = await _orderRepository.GetPagedAsync(
-                o => !request.Status.HasValue || o.Status == request.Status.Value,
+                o => (!request.Status.HasValue || o.Status == request.Status.Value)
+                  && (string.IsNullOrEmpty(request.CustomerId) || o.CustomerId == request.CustomerId),
                 request.PageNumber,
                 request.PageSize,
                 o => o.CreatedAt,

@@ -35,7 +35,7 @@ public class ReservationsController : BaseApiController
     }
 }
 
-[Authorize(Roles = $"{Roles.SuperAdmin},{Roles.Admin},{Roles.Manager}")]
+[Authorize(Roles = $"{Roles.SuperAdmin},{Roles.Admin},{Roles.Manager},{Roles.Cashier}")]
 [Route("api/v1/customers")]
 public class CustomersController : BaseApiController
 {
