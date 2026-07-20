@@ -27,14 +27,15 @@ public class MongoDbContext : IMongoDbContext
     public MongoDbContext(IOptions<MongoDbSettings> settingsOptions)
     {
         var settings = settingsOptions.Value;
-        var connectionString = string.IsNullOrWhiteSpace(settings.ConnectionString)
-            ? "mongodb://localhost:27017"
-            : settings.ConnectionString;
+        if (string.IsNullOrWhiteSpace(settings.ConnectionString))
+        {
+            throw new InvalidOperationException("MongoDB connection string is missing. Please configure 'MongoDbSettings__ConnectionString' (e.g. MongoDB Atlas URI) in backend/.env or appsettings.json.");
+        }
 
-        var mongoClientSettings = MongoClientSettings.FromConnectionString(connectionString);
+        var mongoClientSettings = MongoClientSettings.FromConnectionString(settings.ConnectionString);
         var timeoutSeconds = settings.ServerSelectionTimeoutSeconds > 0
             ? settings.ServerSelectionTimeoutSeconds
-            : 3;
+            : 5;
         mongoClientSettings.ServerSelectionTimeout = TimeSpan.FromSeconds(timeoutSeconds);
 
         _client = new MongoClient(mongoClientSettings);

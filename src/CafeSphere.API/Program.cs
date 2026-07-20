@@ -123,13 +123,17 @@ using (var scope = app.Services.CreateScope())
     {
         Log.Warning("MongoDB Atlas Authentication Failed: {Message}. Please verify your database credentials in backend/.env", authEx.Message);
     }
+    catch (InvalidOperationException invalidEx)
+    {
+        Log.Warning("MongoDB startup initialization skipped: {Message}", invalidEx.Message);
+    }
     catch (TimeoutException timeEx)
     {
-        Log.Warning("MongoDB database is not reachable ({Message}). API will continue running without local MongoDB.", timeEx.Message);
+        Log.Warning("MongoDB database is not reachable ({Message}). Please verify network connectivity to MongoDB Atlas.", timeEx.Message);
     }
     catch (MongoDB.Driver.MongoConnectionException connEx)
     {
-        Log.Warning("MongoDB database connection refused ({Message}). API will continue running without local MongoDB.", connEx.Message);
+        Log.Warning("MongoDB database connection refused ({Message}). Please verify connection settings in backend/.env.", connEx.Message);
     }
     catch (Exception ex)
     {
