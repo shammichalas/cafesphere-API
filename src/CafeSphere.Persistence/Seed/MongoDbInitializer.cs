@@ -156,7 +156,6 @@ public static class MongoDbInitializer
                     CategoryName = "Espresso & Coffee",
                     ImageUrl = "https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=500",
                     IsAvailable = true,
-                    StockQuantity = 500,
                     PreparationTimeMinutes = 3
                 },
                 new Product
@@ -170,7 +169,6 @@ public static class MongoDbInitializer
                     CategoryName = "Espresso & Coffee",
                     ImageUrl = "https://images.unsplash.com/photo-1534778101976-62847782c213?w=500",
                     IsAvailable = true,
-                    StockQuantity = 450,
                     PreparationTimeMinutes = 4
                 },
                 new Product
@@ -184,7 +182,6 @@ public static class MongoDbInitializer
                     CategoryName = "Espresso & Coffee",
                     ImageUrl = "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=500",
                     IsAvailable = true,
-                    StockQuantity = 300,
                     PreparationTimeMinutes = 4
                 },
                 new Product
@@ -198,7 +195,6 @@ public static class MongoDbInitializer
                     CategoryName = "Bakery & Pastries",
                     ImageUrl = "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=500",
                     IsAvailable = true,
-                    StockQuantity = 40,
                     PreparationTimeMinutes = 1
                 },
                 new Product
@@ -212,7 +208,6 @@ public static class MongoDbInitializer
                     CategoryName = "Breakfast & Sandwiches",
                     ImageUrl = "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=500",
                     IsAvailable = true,
-                    StockQuantity = 60,
                     PreparationTimeMinutes = 8
                 }
             };
@@ -220,17 +215,17 @@ public static class MongoDbInitializer
         }
 
         // 5. Seed Inventory Items
-        var inventoryCount = await context.InventoryItems.CountDocumentsAsync(FilterDefinition<InventoryItem>.Empty);
+        var inventoryCount = await context.Inventory.CountDocumentsAsync(FilterDefinition<InventoryItem>.Empty);
         if (inventoryCount == 0)
         {
             var inventoryItems = new List<InventoryItem>
             {
-                new InventoryItem { Name = "Single-Origin Arabica Coffee Beans", Category = "Coffee", QuantityInStock = 45.5m, UnitOfMeasure = "kg", MinimumReorderLevel = 10m, UnitCost = 14.50m, ReorderQuantity = 25m },
-                new InventoryItem { Name = "Whole Organic Milk", Category = "Dairy", QuantityInStock = 120m, UnitOfMeasure = "L", MinimumReorderLevel = 20m, UnitCost = 1.20m, ReorderQuantity = 50m },
-                new InventoryItem { Name = "Unsweetened Almond Milk", Category = "Dairy Alternatives", QuantityInStock = 35m, UnitOfMeasure = "L", MinimumReorderLevel = 10m, UnitCost = 2.10m, ReorderQuantity = 20m },
-                new InventoryItem { Name = "French Pastry Butter", Category = "Bakery Ingredients", QuantityInStock = 18m, UnitOfMeasure = "kg", MinimumReorderLevel = 5m, UnitCost = 6.80m, ReorderQuantity = 10m }
+                new InventoryItem { ItemName = "Single-Origin Arabica Coffee Beans", SKU = "INV-BEANS-01", Category = "Coffee", CurrentStock = 45.5, MinimumStock = 10, UnitOfMeasure = "kg", CostPerUnit = 14.50m, Status = InventoryStatus.InStock },
+                new InventoryItem { ItemName = "Whole Organic Milk", SKU = "INV-MILK-WHOLE", Category = "Dairy", CurrentStock = 120, MinimumStock = 20, UnitOfMeasure = "L", CostPerUnit = 1.20m, Status = InventoryStatus.InStock },
+                new InventoryItem { ItemName = "Unsweetened Almond Milk", SKU = "INV-MILK-ALMOND", Category = "Dairy Alternatives", CurrentStock = 35, MinimumStock = 10, UnitOfMeasure = "L", CostPerUnit = 2.10m, Status = InventoryStatus.InStock },
+                new InventoryItem { ItemName = "French Pastry Butter", SKU = "INV-BUTTER-01", Category = "Bakery Ingredients", CurrentStock = 18, MinimumStock = 5, UnitOfMeasure = "kg", CostPerUnit = 6.80m, Status = InventoryStatus.InStock }
             };
-            await context.InventoryItems.InsertManyAsync(inventoryItems);
+            await context.Inventory.InsertManyAsync(inventoryItems);
         }
 
         // 6. Seed Cafe Tables
@@ -239,10 +234,10 @@ public static class MongoDbInitializer
         {
             var tables = new List<Table>
             {
-                new Table { TableNumber = "T1", Capacity = 2, Location = "Indoor Window", Status = TableStatus.Available },
-                new Table { TableNumber = "T2", Capacity = 4, Location = "Main Dining", Status = TableStatus.Occupied },
-                new Table { TableNumber = "T3", Capacity = 6, Location = "Patio Terrace", Status = TableStatus.Reserved },
-                new Table { TableNumber = "T4", Capacity = 4, Location = "VIP Lounge Booth", Status = TableStatus.Available }
+                new Table { TableNumber = "T1", Capacity = 2, LocationArea = "Indoor Window", Status = TableStatus.Available },
+                new Table { TableNumber = "T2", Capacity = 4, LocationArea = "Main Dining", Status = TableStatus.Occupied },
+                new Table { TableNumber = "T3", Capacity = 6, LocationArea = "Patio Terrace", Status = TableStatus.Reserved },
+                new Table { TableNumber = "T4", Capacity = 4, LocationArea = "VIP Lounge Booth", Status = TableStatus.Available }
             };
             await context.Tables.InsertManyAsync(tables);
         }
@@ -254,19 +249,19 @@ public static class MongoDbInitializer
             var sampleOrder = new Order
             {
                 OrderNumber = "ORD-2026-1001",
-                OrderType = OrderType.DineIn,
+                Type = OrderType.DineIn,
                 Status = OrderStatus.Preparing,
-                PaymentStatus = PaymentStatus.Paid,
-                PaymentMethod = PaymentMethod.CreditCard,
+                PaymentStatus = PaymentStatus.Completed,
                 TableNumber = "T2",
                 SubTotal = 14.20m,
-                Tax = 1.14m,
-                Total = 15.34m,
+                TaxAmount = 1.14m,
+                DiscountAmount = 0.00m,
+                TotalAmount = 15.34m,
                 Notes = "Extra caramel drizzle on cappuccino",
                 Items = new List<OrderItem>
                 {
-                    new OrderItem { ProductName = "Velvety Cappuccino", Quantity = 2, UnitPrice = 4.75m, TotalPrice = 9.50m },
-                    new OrderItem { ProductName = "French Butter Croissant", Quantity = 1, UnitPrice = 4.70m, TotalPrice = 4.70m }
+                    new OrderItem { ProductId = "prod-1", ProductName = "Velvety Cappuccino", UnitPrice = 4.75m, Quantity = 2 },
+                    new OrderItem { ProductId = "prod-2", ProductName = "French Butter Croissant", UnitPrice = 4.70m, Quantity = 1 }
                 },
                 CreatedAt = DateTime.UtcNow
             };
