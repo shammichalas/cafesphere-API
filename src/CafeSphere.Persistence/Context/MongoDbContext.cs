@@ -6,6 +6,8 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
 
+using Microsoft.Extensions.Configuration;
+
 namespace CafeSphere.Persistence.Context;
 
 public class MongoDbContext : IMongoDbContext
@@ -24,15 +26,27 @@ public class MongoDbContext : IMongoDbContext
         ConventionRegistry.Register("CafeSphereConventions", conventionPack, _ => true);
     }
 
-    public MongoDbContext(IOptions<MongoDbSettings> settingsOptions)
+    public MongoDbContext(IOptions<MongoDbSettings> settingsOptions, IConfiguration configuration)
     {
         var settings = settingsOptions.Value;
-        if (string.IsNullOrWhiteSpace(settings.ConnectionString))
+        var connectionString = settings.ConnectionString;
+
+        if (string.IsNullOrWhiteSpace(connectionString))
         {
-            throw new InvalidOperationException("MongoDB connection string is missing. Please configure 'MongoDbSettings__ConnectionString' (e.g. MongoDB Atlas URI) in backend/.env or appsettings.json.");
+            connectionString = configuration["MongoDbSettings:ConnectionString"]
+                ?? configuration["MongoDbSettings__ConnectionString"]
+                ?? configuration["MONGODB_CONNECTION_STRING"]
+                ?? Environment.GetEnvironmentVariable("MongoDbSettings__ConnectionString")
+                ?? Environment.GetEnvironmentVariable("MongoDbSettings:ConnectionString")
+                ?? Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING");
         }
 
-        var mongoClientSettings = MongoClientSettings.FromConnectionString(settings.ConnectionString);
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException("MongoDB connection string is missing. Please set 'MongoDbSettings__ConnectionString' in your backend/.env file.");
+        }
+
+        var mongoClientSettings = MongoClientSettings.FromConnectionString(connectionString);
         var timeoutSeconds = settings.ServerSelectionTimeoutSeconds > 0
             ? settings.ServerSelectionTimeoutSeconds
             : 5;

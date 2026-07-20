@@ -10,20 +10,17 @@ using CafeSphere.Persistence.Seed;
 using Microsoft.OpenApi;
 using Serilog;
 
-// Load Environment variables from .env file if present
-var currentDir = Directory.GetCurrentDirectory();
-var envPath = Path.Combine(currentDir, ".env");
-if (!File.Exists(envPath))
+// Load Environment variables from .env file by searching current and parent directories
+var searchDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+while (searchDir != null)
 {
-    var parentEnvPath = Path.Combine(currentDir, "..", "..", ".env");
-    if (File.Exists(parentEnvPath))
+    var envFilePath = Path.Combine(searchDir.FullName, ".env");
+    if (File.Exists(envFilePath))
     {
-        DotNetEnv.Env.Load(parentEnvPath);
+        DotNetEnv.Env.Load(envFilePath);
+        break;
     }
-}
-else
-{
-    DotNetEnv.Env.Load(envPath);
+    searchDir = searchDir.Parent;
 }
 
 var builder = WebApplication.CreateBuilder(args);
