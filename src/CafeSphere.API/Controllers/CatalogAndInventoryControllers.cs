@@ -34,6 +34,27 @@ public class ProductsController : BaseApiController
         var result = await Mediator.Send(new GetProductsQuery(categoryId));
         return HandleResult(result);
     }
+
+    /// <summary>
+    /// Add a new dish product to the catalog menu (Admin & Kitchen Staff).
+    /// </summary>
+    [HttpPost]
+    [Authorize(Roles = $"{Roles.SuperAdmin},{Roles.Admin},{Roles.Manager},{Roles.KitchenStaff}")]
+    [ProducesResponseType(typeof(ProductDto), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
+    {
+        var command = new CreateProductCommand(
+            request.Name,
+            request.Description,
+            request.Price,
+            request.CostPrice,
+            request.CategoryId,
+            request.ImageUrl,
+            request.PreparationTimeMinutes
+        );
+        var result = await Mediator.Send(command);
+        return HandleResult(result);
+    }
 }
 
 [Authorize(Roles = $"{Roles.SuperAdmin},{Roles.Admin},{Roles.Manager}")]
