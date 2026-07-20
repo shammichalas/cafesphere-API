@@ -77,26 +77,7 @@ sequenceDiagram
 | **AI Sales Assistant** | ✅ MongoDB Atlas | ➖ | Context-aware sales analytics and inventory restock recommendation handler. |
 | **Reservations & Staff** | ⚠️ Partial Scaffold | ➖ | Scaffolded DTOs & endpoints available for upcoming expansion. |
 
----
 
-## 🛠️ Environment Configuration (`.env`)
-
-```env
-# Application Settings
-ASPNETCORE_ENVIRONMENT=Development
-CORS_ALLOWED_ORIGINS=http://localhost:5000,http://localhost:5001,http://localhost:5165
-
-# MongoDB Atlas Database Connection
-MongoDbSettings__ConnectionString=mongodb+srv://caafe:cafe@cluster0.l90lfbn.mongodb.net/?appName=Cluster0
-MongoDbSettings__DatabaseName=CafeSphereDb
-
-# Security & JWT Tokens
-JwtSettings__SecretKey=SuperSecretSecurityKey_CafeSphere_UltraSecure2026_Enterprise!
-JwtSettings__Issuer=CafeSphere.API
-JwtSettings__Audience=CafeSphere.UI
-JwtSettings__AccessTokenExpirationMinutes=60
-JwtSettings__RefreshTokenExpirationDays=7
-```
 
 ---
 
