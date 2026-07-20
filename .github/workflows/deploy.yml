@@ -16,18 +16,16 @@ jobs:
     - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: |
-          9.0.x
-          10.0.x
+        dotnet-version: '9.0.x'
 
     - name: Restore Dependencies
-      run: dotnet restore CafeSphere.slnx
+      run: dotnet restore CafeSphere.sln
 
     - name: Build Solution
-      run: dotnet build CafeSphere.slnx --no-restore -c Release
+      run: dotnet build CafeSphere.sln --no-restore -c Release
 
     - name: Execute Tests
-      run: dotnet test CafeSphere.slnx --no-build -c Release --verbosity normal
+      run: dotnet test CafeSphere.sln --no-build -c Release --verbosity normal
 
   docker-build:
     needs: build-and-test
