@@ -29,17 +29,15 @@ public class MongoDbContext : IMongoDbContext
     public MongoDbContext(IOptions<MongoDbSettings> settingsOptions, IConfiguration configuration)
     {
         var settings = settingsOptions.Value;
-        var connectionString = settings.ConnectionString;
-
-        if (string.IsNullOrWhiteSpace(connectionString))
-        {
-            connectionString = configuration["MongoDbSettings:ConnectionString"]
-                ?? configuration["MongoDbSettings__ConnectionString"]
-                ?? configuration["MONGODB_CONNECTION_STRING"]
-                ?? Environment.GetEnvironmentVariable("MongoDbSettings__ConnectionString")
-                ?? Environment.GetEnvironmentVariable("MongoDbSettings:ConnectionString")
-                ?? Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING");
-        }
+        var connectionString = GetFirstNonEmpty(
+            settings.ConnectionString,
+            configuration["MongoDbSettings__ConnectionString"],
+            configuration["MongoDbSettings:ConnectionString"],
+            configuration["MONGODB_CONNECTION_STRING"],
+            Environment.GetEnvironmentVariable("MongoDbSettings__ConnectionString"),
+            Environment.GetEnvironmentVariable("MongoDbSettings:ConnectionString"),
+            Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING")
+        );
 
         if (string.IsNullOrWhiteSpace(connectionString))
         {
@@ -54,6 +52,11 @@ public class MongoDbContext : IMongoDbContext
 
         _client = new MongoClient(mongoClientSettings);
         Database = _client.GetDatabase(string.IsNullOrWhiteSpace(settings.DatabaseName) ? "CafeSphereDb" : settings.DatabaseName);
+    }
+
+    private static string? GetFirstNonEmpty(params string?[] values)
+    {
+        return values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
     }
 
     public IMongoCollection<User> Users => GetCollection<User>("Users");
