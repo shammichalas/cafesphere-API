@@ -162,47 +162,6 @@ public class LoginUserQueryHandler : IRequestHandler<LoginUserQuery, Result<Auth
             // Database query fallback handled below
         }
 
-        // Demo fallback for initial system accounts (Admin, Cashier, Kitchen) if not seeded in DB
-        if (user == null)
-        {
-            if (input.Contains("admin") && (request.Password == "Admin@123" || request.Password.Length >= 6))
-            {
-                user = new User
-                {
-                    Id = "607f191e810c19729de860ea",
-                    Username = "admin",
-                    Email = "admin@cafesphere.com",
-                    FullName = "Alexandra S. (Manager)",
-                    Role = Roles.SuperAdmin,
-                    PasswordHash = _passwordHasher.HashPassword(request.Password)
-                };
-            }
-            else if (input.Contains("cashier") && (request.Password == "Cashier@123" || request.Password.Length >= 6))
-            {
-                user = new User
-                {
-                    Id = "607f191e810c19729de860eb",
-                    Username = "cashier",
-                    Email = "cashier@cafesphere.com",
-                    FullName = "John Doe (Cashier)",
-                    Role = Roles.Cashier,
-                    PasswordHash = _passwordHasher.HashPassword(request.Password)
-                };
-            }
-            else if (input.Contains("kitchen") && (request.Password == "Kitchen@123" || request.Password.Length >= 6))
-            {
-                user = new User
-                {
-                    Id = "607f191e810c19729de860ec",
-                    Username = "kitchen",
-                    Email = "kitchen@cafesphere.com",
-                    FullName = "Chef Marco (Kitchen)",
-                    Role = Roles.KitchenStaff,
-                    PasswordHash = _passwordHasher.HashPassword(request.Password)
-                };
-            }
-        }
-
         if (user == null || !_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
         {
             return Result<AuthResponse>.Failure("Auth.InvalidCredentials", "Invalid email/username or password.");
@@ -211,14 +170,7 @@ public class LoginUserQueryHandler : IRequestHandler<LoginUserQuery, Result<Auth
         var refreshToken = _jwtService.GenerateRefreshToken(_currentUserService.IpAddress ?? "127.0.0.1");
         user.RefreshTokens.Add(refreshToken);
 
-        try
-        {
-            await _userRepository.UpdateAsync(user, cancellationToken);
-        }
-        catch
-        {
-            // Ignore update failure if demo fallback
-        }
+        await _userRepository.UpdateAsync(user, cancellationToken);
 
         var accessToken = _jwtService.GenerateAccessToken(user);
 
@@ -236,3 +188,93 @@ public class LoginUserQueryHandler : IRequestHandler<LoginUserQuery, Result<Auth
         return Result<AuthResponse>.Success(response);
     }
 }
+
+public record ForgotPasswordCommand(string Email) : IRequest<Result<bool>>;
+
+public class ForgotPasswordCommandValidator : AbstractValidator<ForgotPasswordCommand>
+{
+    public ForgotPasswordCommandValidator()
+    {
+        RuleFor(x => x.Email).NotEmpty().EmailAddress();
+    }
+}
+
+public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordCommand, Result<bool>>
+{
+    private readonly IMongoRepository<User> _userRepository;
+    private readonly IEmailService _emailService;
+
+    public ForgotPasswordCommandHandler(IMongoRepository<User> userRepository, IEmailService emailService)
+    {
+        _userRepository = userRepository;
+        _emailService = emailService;
+    }
+
+    public async Task<Result<bool>> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
+    {
+        var input = request.Email.Trim().ToLowerInvariant();
+        var user = await _userRepository.FindOneAsync(u => u.Email == input, cancellationToken);
+        if (user != null)
+        {
+            var token = Guid.NewGuid().ToString("N");
+            user.PasswordResetToken = token;
+            user.ResetTokenExpiresAt = DateTime.UtcNow.AddHours(2);
+            await _userRepository.UpdateAsync(user, cancellationToken);
+            
+            try
+            {
+                await _emailService.SendPasswordResetEmailAsync(user.Email, token, cancellationToken);
+            }
+            catch {}
+        }
+        
+        return Result<bool>.Success(true);
+    }
+}
+
+public record ResetPasswordCommand(string Email, string Token, string NewPassword) : IRequest<Result<bool>>;
+
+public class ResetPasswordCommandValidator : AbstractValidator<ResetPasswordCommand>
+{
+    public ResetPasswordCommandValidator()
+    {
+        RuleFor(x => x.Email).NotEmpty().EmailAddress();
+        RuleFor(x => x.Token).NotEmpty();
+        RuleFor(x => x.NewPassword).NotEmpty().MinimumLength(6);
+    }
+}
+
+public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand, Result<bool>>
+{
+    private readonly IMongoRepository<User> _userRepository;
+    private readonly IPasswordHasher _passwordHasher;
+
+    public ResetPasswordCommandHandler(IMongoRepository<User> userRepository, IPasswordHasher passwordHasher)
+    {
+        _userRepository = userRepository;
+        _passwordHasher = passwordHasher;
+    }
+
+    public async Task<Result<bool>> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
+    {
+        var input = request.Email.Trim().ToLowerInvariant();
+        var user = await _userRepository.FindOneAsync(
+            u => u.Email == input && u.PasswordResetToken == request.Token,
+            cancellationToken
+        );
+
+        if (user == null || user.ResetTokenExpiresAt == null || user.ResetTokenExpiresAt < DateTime.UtcNow)
+        {
+            return Result<bool>.Failure("Auth.InvalidResetToken", "Invalid or expired password reset token.");
+        }
+
+        user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
+        user.PasswordResetToken = null;
+        user.ResetTokenExpiresAt = null;
+
+        await _userRepository.UpdateAsync(user, cancellationToken);
+
+        return Result<bool>.Success(true);
+    }
+}
+

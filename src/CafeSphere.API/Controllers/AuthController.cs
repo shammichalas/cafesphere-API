@@ -45,9 +45,11 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("forgot-password")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public IActionResult ForgotPassword([FromBody] ForgotPasswordRequest request)
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
     {
-        return Ok(new { Message = "If the email is registered, a password reset link has been dispatched." });
+        var command = new ForgotPasswordCommand(request.Email);
+        var result = await Mediator.Send(command);
+        return HandleResult(result);
     }
 
     /// <summary>
@@ -55,8 +57,10 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("reset-password")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public IActionResult ResetPassword([FromBody] ResetPasswordRequest request)
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
     {
-        return Ok(new { Message = "Password has been successfully reset." });
+        var command = new ResetPasswordCommand(request.Email, request.Token, request.NewPassword);
+        var result = await Mediator.Send(command);
+        return HandleResult(result);
     }
 }

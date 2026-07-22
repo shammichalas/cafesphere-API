@@ -28,7 +28,16 @@ public static class DependencyInjection
         services.AddTransient<IFileStorageService, FileStorageService>();
 
         // Caching
-        services.AddDistributedMemoryCache(); // Fallback in-memory cache for distributed cache interface
+        var redisConn = configuration["RedisSettings:ConnectionString"] 
+            ?? configuration.GetConnectionString("Redis") 
+            ?? Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")
+            ?? "localhost:6379";
+
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = redisConn;
+            options.InstanceName = "CafeSphere_";
+        });
         services.AddSingleton<ICacheService, RedisCacheService>();
 
         // JWT Authentication Configuration

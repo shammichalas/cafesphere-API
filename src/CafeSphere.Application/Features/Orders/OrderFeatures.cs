@@ -5,6 +5,7 @@ using CafeSphere.Domain.Entities;
 using CafeSphere.Domain.Enums;
 using CafeSphere.Domain.Repositories;
 using CafeSphere.Shared.Models;
+using CafeSphere.Shared.Constants;
 using FluentValidation;
 using MediatR;
 
@@ -409,19 +410,25 @@ public record GetOrdersQuery(
 public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, Result<PagedResult<OrderDto>>>
 {
     private readonly IMongoRepository<Order> _orderRepository;
+    private readonly ICurrentUserService _currentUserService;
 
-    public GetOrdersQueryHandler(IMongoRepository<Order> orderRepository)
+    public GetOrdersQueryHandler(IMongoRepository<Order> orderRepository, ICurrentUserService currentUserService)
     {
         _orderRepository = orderRepository;
+        _currentUserService = currentUserService;
     }
 
     public async Task<Result<PagedResult<OrderDto>>> Handle(GetOrdersQuery request, CancellationToken cancellationToken)
     {
         try
         {
+            var effectiveCustomerId = _currentUserService.UserRole == Roles.Customer
+                ? _currentUserService.UserId
+                : request.CustomerId;
+
             var pagedOrders = await _orderRepository.GetPagedAsync(
                 o => (!request.Status.HasValue || o.Status == request.Status.Value)
-                  && (string.IsNullOrEmpty(request.CustomerId) || o.CustomerId == request.CustomerId),
+                  && (string.IsNullOrEmpty(effectiveCustomerId) || o.CustomerId == effectiveCustomerId),
                 request.PageNumber,
                 request.PageSize,
                 o => o.CreatedAt,
