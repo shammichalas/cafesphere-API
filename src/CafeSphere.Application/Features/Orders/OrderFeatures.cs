@@ -381,22 +381,23 @@ public class UpdateKitchenOrderStatusCommandHandler : IRequestHandler<UpdateKitc
         try
         {
             var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
-            if (order != null)
+            if (order == null)
             {
-                order.Status = request.NewStatus;
-                if (request.NewStatus == OrderStatus.Preparing) order.PreparationStartedAt = DateTime.UtcNow;
-                if (request.NewStatus == OrderStatus.Ready || request.NewStatus == OrderStatus.Completed) order.PreparationCompletedAt = DateTime.UtcNow;
-
-                await _orderRepository.UpdateAsync(order, cancellationToken);
+                return Result<bool>.Failure("Order.NotFound", $"Order with ID {request.OrderId} was not found.");
             }
+
+            order.Status = request.NewStatus;
+            if (request.NewStatus == OrderStatus.Preparing) order.PreparationStartedAt = DateTime.UtcNow;
+            if (request.NewStatus == OrderStatus.Ready || request.NewStatus == OrderStatus.Completed) order.PreparationCompletedAt = DateTime.UtcNow;
+
+            await _orderRepository.UpdateAsync(order, cancellationToken);
 
             await _signalRService.NotifyKitchenOrderStatusChangedAsync(request.OrderId, request.NewStatus.ToString(), cancellationToken);
             return Result<bool>.Success(true);
         }
-        catch
+        catch (Exception ex)
         {
-            await _signalRService.NotifyKitchenOrderStatusChangedAsync(request.OrderId, request.NewStatus.ToString(), cancellationToken);
-            return Result<bool>.Success(true);
+            return Result<bool>.Failure("Database.UpdateError", $"Failed to update kitchen order status: {ex.Message}");
         }
     }
 }
