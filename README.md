@@ -75,7 +75,7 @@ sequenceDiagram
 | **Product & Categories** | ✅ MongoDB Atlas | ➖ | Catalog hierarchy, slug indexing, and availability management. |
 | **Inventory Management** | ✅ MongoDB Atlas | ➖ | Raw ingredient stock tracking, unit cost, and reorder threshold alerts. |
 | **AI Sales Assistant** | ✅ MongoDB Atlas | ➖ | Context-aware sales analytics and inventory restock recommendation handler. |
-| **Reservations & Staff** | ⚠️ Partial Scaffold | ➖ | Scaffolded DTOs & endpoints available for upcoming expansion. |
+| **Reservations & Staff** | ✅ MongoDB Atlas | ✅ SignalR WebSockets | Interactive seating allocation, live booking slots, guest seating state triggers, and ReservationsHub synchronization. |
 
 
 
