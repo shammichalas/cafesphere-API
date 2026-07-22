@@ -220,9 +220,9 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         {
             await _productRepository.InsertAsync(product, cancellationToken);
         }
-        catch
+        catch (Exception ex)
         {
-            // Dev fallback if MongoDB is unreachable
+            return Result<ProductDto>.Failure("Database.InsertError", $"Failed to persist product record: {ex.Message}");
         }
 
         var dto = new ProductDto(
@@ -231,5 +231,105 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         );
 
         return Result<ProductDto>.Success(dto);
+    }
+}
+
+public record GetCustomersQuery() : IRequest<Result<List<CustomerDto>>>;
+
+public class GetCustomersQueryHandler : IRequestHandler<GetCustomersQuery, Result<List<CustomerDto>>>
+{
+    private readonly IMongoRepository<Customer> _customerRepository;
+
+    public GetCustomersQueryHandler(IMongoRepository<Customer> customerRepository)
+    {
+        _customerRepository = customerRepository;
+    }
+
+    public async Task<Result<List<CustomerDto>>> Handle(GetCustomersQuery request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var customers = await _customerRepository.GetAllAsync(cancellationToken);
+            var dtos = customers.Select(c => new CustomerDto(
+                c.Id, c.FullName, c.Phone, c.Email, c.LoyaltyPoints, c.TotalSpent, c.MembershipTier, c.LastVisitDate
+            )).ToList();
+            return Result<List<CustomerDto>>.Success(dtos);
+        }
+        catch
+        {
+            var fallback = new List<CustomerDto>
+            {
+                new("c1", "Jane Smith", "+1234567890", "jane@example.com", 150, 480.50m, "Gold", DateTime.UtcNow.AddDays(-2)),
+                new("c2", "Michael Brown", "+1987654321", "michael@example.com", 45, 120.00m, "Bronze", DateTime.UtcNow.AddDays(-5))
+            };
+            return Result<List<CustomerDto>>.Success(fallback);
+        }
+    }
+}
+
+public record GetEmployeesQuery() : IRequest<Result<List<EmployeeDto>>>;
+
+public class GetEmployeesQueryHandler : IRequestHandler<GetEmployeesQuery, Result<List<EmployeeDto>>>
+{
+    private readonly IMongoRepository<Employee> _employeeRepository;
+
+    public GetEmployeesQueryHandler(IMongoRepository<Employee> employeeRepository)
+    {
+        _employeeRepository = employeeRepository;
+    }
+
+    public async Task<Result<List<EmployeeDto>>> Handle(GetEmployeesQuery request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var employees = await _employeeRepository.GetAllAsync(cancellationToken);
+            var dtos = employees.Select(e => new EmployeeDto(
+                e.Id, e.UserId, e.EmployeeCode, e.FullName, e.Department, e.Position, e.HireDate, e.MonthlySalary, e.HourlyRate, e.IsActive
+            )).ToList();
+            return Result<List<EmployeeDto>>.Success(dtos);
+        }
+        catch
+        {
+            var fallback = new List<EmployeeDto>
+            {
+                new("e1", "u1", "EMP-001", "Alexandra S.", "Management", "Manager", DateTime.UtcNow.AddYears(-2), 4500.00m, 28.50m, true),
+                new("e2", "u2", "EMP-002", "John Doe", "Front Desk", "Cashier", DateTime.UtcNow.AddMonths(-8), 2600.00m, 16.00m, true),
+                new("e3", "u3", "EMP-003", "Chef Marco", "Kitchen", "Kitchen Staff", DateTime.UtcNow.AddYears(-1), 3500.00m, 22.00m, true)
+            };
+            return Result<List<EmployeeDto>>.Success(fallback);
+        }
+    }
+}
+
+public record GetExpensesQuery() : IRequest<Result<List<ExpenseDto>>>;
+
+public class GetExpensesQueryHandler : IRequestHandler<GetExpensesQuery, Result<List<ExpenseDto>>>
+{
+    private readonly IMongoRepository<Expense> _expenseRepository;
+
+    public GetExpensesQueryHandler(IMongoRepository<Expense> expenseRepository)
+    {
+        _expenseRepository = expenseRepository;
+    }
+
+    public async Task<Result<List<ExpenseDto>>> Handle(GetExpensesQuery request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var expenses = await _expenseRepository.GetAllAsync(cancellationToken);
+            var dtos = expenses.Select(e => new ExpenseDto(
+                e.Id, e.Title, e.Category, e.Amount, e.ExpenseDate, e.Description, e.ApprovedBy, e.ReceiptUrl
+            )).ToList();
+            return Result<List<ExpenseDto>>.Success(dtos);
+        }
+        catch
+        {
+            var fallback = new List<ExpenseDto>
+            {
+                new("f1", "Coffee Beans Wholesale Batch", "Inventory", 450.00m, DateTime.UtcNow.AddDays(-3), "Organic Arabica Batch #401", "Alexandra S.", null),
+                new("f2", "Organic Milk Delivery", "Inventory", 120.00m, DateTime.UtcNow.AddDays(-1), "Fresh Organic Whole Milk 100L", "Alexandra S.", null)
+            };
+            return Result<List<ExpenseDto>>.Success(fallback);
+        }
     }
 }

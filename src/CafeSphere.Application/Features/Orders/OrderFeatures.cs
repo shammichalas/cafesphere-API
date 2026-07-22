@@ -131,9 +131,9 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
         {
             await _orderRepository.InsertAsync(order, cancellationToken);
         }
-        catch
+        catch (Exception ex)
         {
-            order.Id = Guid.NewGuid().ToString("N");
+            return Result<OrderDto>.Failure("Database.InsertError", $"Failed to persist order record: {ex.Message}");
         }
 
         var dto = new OrderDto(
@@ -235,9 +235,9 @@ public class CheckoutOrderCommandHandler : IRequestHandler<CheckoutOrderCommand,
                     );
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Proceed to direct creation
+                return Result<ReceiptDto>.Failure("Database.UpdateError", $"Failed to update order checkout status: {ex.Message}");
             }
         }
 
@@ -253,21 +253,27 @@ public class CheckoutOrderCommandHandler : IRequestHandler<CheckoutOrderCommand,
                 Items: request.DirectItems
             );
             var createResult = await _mediator.Send(createCmd, cancellationToken);
-            if (createResult.IsSuccess && createResult.Value != null)
+            if (!createResult.IsSuccess)
             {
-                orderDto = createResult.Value;
+                return Result<ReceiptDto>.Failure(createResult.Error.Code, createResult.Error.Message);
             }
+            orderDto = createResult.Value;
         }
 
-        decimal subtotal = orderDto?.SubTotal ?? request.AmountPaid;
-        decimal tax = orderDto?.TaxAmount ?? (subtotal * 0.08m);
-        decimal discount = orderDto?.DiscountAmount ?? 0m;
-        decimal total = orderDto?.TotalAmount ?? (subtotal + tax);
+        if (orderDto == null)
+        {
+            return Result<ReceiptDto>.Failure("Checkout.InvalidOrder", "No active order or direct items specified for checkout.");
+        }
+
+        decimal subtotal = orderDto.SubTotal;
+        decimal tax = orderDto.TaxAmount;
+        decimal discount = orderDto.DiscountAmount;
+        decimal total = orderDto.TotalAmount;
 
         var payment = new Payment
         {
-            OrderId = orderDto?.Id ?? Guid.NewGuid().ToString("N"),
-            OrderNumber = orderDto?.OrderNumber ?? $"ORD-POS-{Random.Shared.Next(1000, 9999)}",
+            OrderId = orderDto.Id,
+            OrderNumber = orderDto.OrderNumber,
             Amount = total,
             Method = request.Method,
             Status = PaymentStatus.Completed,
@@ -280,16 +286,16 @@ public class CheckoutOrderCommandHandler : IRequestHandler<CheckoutOrderCommand,
             await _paymentRepository.InsertAsync(payment, cancellationToken);
             await _signalRService.NotifyDashboardMetricsUpdatedAsync(payment, cancellationToken);
         }
-        catch
+        catch (Exception ex)
         {
-            // Dev fallback
+            return Result<ReceiptDto>.Failure("Database.InsertError", $"Failed to record payment transaction: {ex.Message}");
         }
 
         var receipt = new ReceiptDto(
             OrderNumber: payment.OrderNumber,
-            CustomerName: !string.IsNullOrWhiteSpace(request.CustomerName) ? request.CustomerName : (orderDto?.CustomerName ?? "POS Customer"),
+            CustomerName: !string.IsNullOrWhiteSpace(request.CustomerName) ? request.CustomerName : (orderDto.CustomerName ?? "POS Customer"),
             OrderDate: DateTime.UtcNow,
-            Items: orderDto?.Items ?? new List<OrderItemDto>(),
+            Items: orderDto.Items ?? new List<OrderItemDto>(),
             SubTotal: subtotal,
             TaxAmount: tax,
             DiscountAmount: discount,
