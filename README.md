@@ -68,7 +68,7 @@ sequenceDiagram
 
 | Module | Persistence | Real-Time Loop | Description |
 | :--- | :---: | :---: | :--- |
-| **Authentication & JWT** | ✅ MongoDB Atlas | ➖ | User registration, BCrypt password hashing, JWT Access & Refresh Token rotation. |
+| **Authentication & JWT** | ✅ MongoDB Atlas | ➖ | Secure logins (no credentials bypass), fully integrated database password resets, and JWT rotation. |
 | **Point of Sale (POS)** | ✅ MongoDB Atlas | ✅ SignalR WebSockets | Menu browsing, line item total computation, 8% tax calculation, checkout payments, and ticket generation. |
 | **Kitchen Display (KDS)** | ✅ MongoDB Atlas | ✅ SignalR WebSockets | Active ticket queue, status state machine transitions (`Pending` ➔ `Preparing` ➔ `Ready` ➔ `Completed`), preparation time tracking. |
 | **Operations Dashboard** | ✅ MongoDB Atlas | ✅ SignalR WebSockets | MongoDB aggregation pipeline calculating today's revenue, order counts, active tickets, and top-selling products by quantity. |
@@ -78,6 +78,13 @@ sequenceDiagram
 | **Reservations & Staff** | ✅ MongoDB Atlas | ✅ SignalR WebSockets | Interactive seating allocation, live booking slots, guest seating state triggers, and ReservationsHub synchronization. |
 
 
+
+---
+
+## 🔒 Caching & Security Specifications
+
+- **Redis Distributed Cache**: Integrated via `Microsoft.Extensions.Caching.StackExchangeRedis` using the Docker Compose Redis service container to optimize metrics retrieval and session lookup operations.
+- **Strict Role & Data Isolation**: Customer order lists are strictly ownership-restricted within the MediatR query handler using the injected `ICurrentUserService` role checks.
 
 ---
 
