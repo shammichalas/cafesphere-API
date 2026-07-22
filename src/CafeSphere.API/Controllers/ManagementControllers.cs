@@ -11,29 +11,52 @@ namespace CafeSphere.API.Controllers;
 public class ReservationsController : BaseApiController
 {
     /// <summary>
-    /// Book a table reservation. (Scaffolded model)
+    /// Retrieve all active table reservations.
+    /// </summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(List<ReservationDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetReservations()
+    {
+        var result = await Mediator.Send(new Application.Features.Reservations.GetReservationsQuery());
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    /// Book a table reservation.
     /// </summary>
     [HttpPost]
     [ProducesResponseType(typeof(ReservationDto), StatusCodes.Status201Created)]
-    public IActionResult CreateReservation([FromBody] CreateReservationRequest request)
+    public async Task<IActionResult> CreateReservation([FromBody] CreateReservationRequest request)
     {
-        var reservation = new ReservationDto(
-            Id: Guid.NewGuid().ToString("N"),
-            CustomerId: null,
-            CustomerName: request.CustomerName,
-            CustomerPhone: request.CustomerPhone,
-            CustomerEmail: request.CustomerEmail,
-            TableId: request.TableId,
-            TableNumber: "T-05",
-            PartySize: request.PartySize,
-            ReservationTime: request.ReservationTime,
-            Status: Domain.Enums.ReservationStatus.Confirmed,
-            SpecialNotes: request.SpecialNotes
+        var command = new Application.Features.Reservations.CreateReservationCommand(
+            request.CustomerName,
+            request.CustomerPhone,
+            request.CustomerEmail,
+            request.TableId,
+            request.TableId.StartsWith("T-") ? request.TableId : $"T-{request.TableId}",
+            request.PartySize,
+            request.ReservationTime,
+            request.SpecialNotes
         );
 
-        return Created($"/api/v1/reservations/{reservation.Id}", reservation);
+        var result = await Mediator.Send(command);
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    /// Update reservation status.
+    /// </summary>
+    [HttpPatch("{id}/status")]
+    [ProducesResponseType(typeof(ReservationDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateStatus(string id, [FromBody] UpdateReservationStatusRequest request)
+    {
+        var command = new Application.Features.Reservations.UpdateReservationStatusCommand(id, request.Status);
+        var result = await Mediator.Send(command);
+        return HandleResult(result);
     }
 }
+
+public record UpdateReservationStatusRequest(Domain.Enums.ReservationStatus Status);
 
 [Authorize(Roles = $"{Roles.SuperAdmin},{Roles.Admin},{Roles.Manager},{Roles.Cashier}")]
 [Route("api/v1/customers")]

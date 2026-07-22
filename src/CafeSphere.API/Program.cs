@@ -154,5 +154,6 @@ app.MapHub<KitchenHub>("/hubs/kitchen");
 app.MapHub<PosHub>("/hubs/pos");
 app.MapHub<DashboardHub>("/hubs/dashboard");
 app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHub<ReservationsHub>("/hubs/reservations");
 
 app.Run();

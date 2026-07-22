@@ -48,3 +48,13 @@ public class NotificationHub : Hub
         await base.OnConnectedAsync();
     }
 }
+
+[Authorize]
+public class ReservationsHub : Hub
+{
+    public async Task JoinReservationsGroup()
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, "ReservationsStaff");
+    }
+}
+

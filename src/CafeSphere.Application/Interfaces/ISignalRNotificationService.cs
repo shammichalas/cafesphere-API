@@ -7,4 +7,5 @@ public interface ISignalRNotificationService
     Task NotifyPosOrderUpdatedAsync(object orderDto, CancellationToken cancellationToken = default);
     Task NotifyDashboardMetricsUpdatedAsync(object metricsDto, CancellationToken cancellationToken = default);
     Task SendUserNotificationAsync(string userId, string title, string message, CancellationToken cancellationToken = default);
+    Task NotifyReservationUpdatedAsync(object reservationDto, CancellationToken cancellationToken = default);
 }
